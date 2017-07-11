@@ -1,100 +1,94 @@
-var mongoose= require('mongoose');
-var schema= mongoose.Schema;
-var nodemailer= require('nodemailer');
+var mongo=require('mongoose');
+var schema=mongo.Schema;
+var mail=require('nodemailer');
+var url='mongodb://127.0.0.1:27017/project'
 
-var transport=nodemailer.createTransport({
-   host :'smtp.gmail.com',
-   auth:{
-     user:'anish.kumar33331@gmail.com',
-     pass:'anish@12345'
-   }
+var userschema=new schema({
+	name :{type: String},
+	email: {type: String, unique: true},
+	pass: {type: Number},
+	phone: {type: Number},
+	photo: {type :String}
+},{collection: 'user'});
+var model=mongo.model('',userschema);
+
+var transfar=mail.createTransport({
+	host: 'smtp.gmail.com',
+	port: 465,
+	secure: true,
+	auth: {
+		user: 'rehanrizvi355@gmail.com',
+		pass: '9690102007'
+	}
 });
 
-var userSchema= new schema({
-	 userName: {type: String, required: true},
-	 email   : {type: String},
-	 password: {type: String},
-	 mobile_no: {type: Number}
-},{collection :'userDetails'});
-
-mongoose.connect('mongodb://127.0.0.1:27017/userInfo', function(err){
-	if(err){
+mongo.connect(url,function(err){
+	if(err)
 		console.log(err);
-	}
-	else{
+	else
 		console.log("connected");
-	}
-});
+})
 
+var signup=(body,callback)=>{
+	var name=body.name;
+	var email=body.email;
+	var pass=body.pass;
+	var phone=body.phone;
+	var file=req.files;
+	var pic=data.pic;
+	var mailopts={
+		'from': 'rehanrizvi355@gmail.com',
+		'to': email,
+		'text': 'Your account is created successfully' 
+	};
 
-var userModel= mongoose.model('', userSchema);
+	transfar.sendMail(mailopts, function(err){
+		if(err)
+			console.log(err);
+		else
+			console.log("message send successfully");
+	})
 
-/*var signup= (data, callback)=>{
-	    var doc= new userModel({"userName": data.userName, "email": data.email,  "password": data.password, "mobile_no": data.mobile_no});
-	    	
-        doc.save(function(err){
-	    		  if(err){
-	    			 callback("signup error : "+err);
-	    		  }
-	    		  else{
-	    			 callback("successfully signed up");
-	    		  }
-	    });
-    	  
-} */
-
-var login= (data, callback)=>{
-	    userModel.findOne({userName: data.userName, password: data.password},
-	    	 function(err, info){
-	    	 	if(err){
-	    	 		 callback(err);
-	    	 	}
-	    	 	else if(info==null){
-	    	 		 callback("user doesn't exist");
-	    	 	}
-	    	 	else{
-	    	 		 callback("you are signed in "+ "\n" + info)
-	    	 	}
-	    	 })
+	var doc=new model({"name": name, "email": email, "pass": pass, "phone": phone, "photo": pic});
+	doc.save(function(err){
+		if(err)
+			callback(err);
+		else{
+			callback("signup successfully");
+		}
+	})	
 }
 
-/*var forgotPassword= (data, callback)=> {
-        userModel.findOne({email : data.email}, function(err, info){
-              if(err){
-              	callback(err);
-              }
-              else if(info==null){
-              	callback("this account doesn't exists");
-              }
-              else{
-              	var otp = Math.floor(1000 + Math.random() * 9000)
-                   otp = otp.toString().substring(0, 4);
-                   otp =  parseInt(otp);
+var login=(body,callback)=>{
+	var email=body.email;
+	var pass=body.pass;
 
-              	transport.sendMail({
-                     from:'<anish.kumar33331@gmail.com>',
-                     to:  data.email,
-                     subject:'you signed up',
-                     text:"this is your one time password  "+otp,
-                     body:"hii"
-                      },function(err,data){
-                            if(err){
-                                 console.log(err);
-                            }
-                            else{
-                               callback("otp sent on emailId");
-                            }
-             });
-              }
-
-        });
-        
-}*/
-
-module.exports= {
-	//signup : signup,
-	login  : login
-	//,forgotPassword: forgotPassword
+	model.find({"email": email, "pass": pass},function(err,data){
+		if(err)
+			callback(err);
+		if(data.length==0)
+			callback("invalid user");
+		else
+		{
+			callback(data);
+		}
+	})
 }
-bbbbbbbbbbbbbbbbbbbbbbbbbbb
->>>>>>> 73467976e2928c413746ab1d2160662ceccbccd
+
+var del=(body,callback)=>{
+	var email=body.email;
+
+	model.remove({"email": email},function(err){
+		if(err)
+			callback(err);
+		else{
+				callback("account deleted successfully");
+		}
+	})
+}
+
+module.exports={
+	login: login,
+	signup: signup,
+	delete: del
+};
